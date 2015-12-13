@@ -42,6 +42,7 @@ setup(
     install_requires=[
         'Click >= 5.1',
         'html2text',
+        'pyperclip',
         'requests',
         'tabulate',
         'xmltodict',
