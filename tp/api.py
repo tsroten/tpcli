@@ -18,6 +18,7 @@ Functions:
 
 import json
 import logging
+import re
 
 import requests
 import xmltodict
@@ -34,7 +35,7 @@ def fetch(api, entity, raw=False, **data):
     Typical options include:
     * orderBy
     * where
-    * include/exclude
+    * include or exclude
     * take
     * skip
 
@@ -50,10 +51,14 @@ def fetch(api, entity, raw=False, **data):
     :rtype: list or dict depending on *raw*
     """
 
-    if 'exclude' in data and not isinstance(data['exclude'], basestring):
-        data['exclude'] = '[{0}]'.format(','.join(data['exclude']))
-    if 'include' in data and not isinstance(data['include'], basestring):
-        data['include'] = '[{0}]'.format(','.join(data['include']))
+    try:
+        if 'exclude' in data and not isinstance(data['exclude'], basestring):
+            data['exclude'] = '[{0}]'.format(','.join(data['exclude']))
+        if 'include' in data and not isinstance(data['include'], basestring):
+            data['include'] = '[{0}]'.format(','.join(data['include']))
+    except TypeError:
+        raise TypeError('include/exclude must be a string or container that '
+                        'supports joining on a string.')
 
     response = api.request_and_raise_error('get', entity.uri, data=data)
 
@@ -95,6 +100,8 @@ class TpEntity(dict):
 
     def __init__(self, *args, **kwargs):
         """Store the API object if specified."""
+        self._logger = logging.getLogger(__name__)
+
         self.api = kwargs.pop('api', None)
         return super(TpEntity, self).__init__(*args, **kwargs)
 
@@ -161,6 +168,17 @@ class General(TpEntity):
     """A Tp General entity."""
 
     uri = 'Generals/'
+    url = 'https://{subdomain}.tpondemand.com/entity/{id}'
+
+    def get_url(self):
+        """Get the entity's URL."""
+        if self.api is None:
+            raise TypeError("Entity's API must be a TpApi object.")
+        if self['Id'] is None:
+            raise ApiError('MissingID', 'An entity ID is required.')
+
+        url = self.url.format(subdomain=self.api.subdomain, id=self['Id'])
+        return url
 
     def follow(self, user_id=None):
         """Follow this entity.
@@ -240,7 +258,7 @@ class TpApi(object):
         :param str user_id: A Targetprocess user's id.
         """
 
-        self.logger = logging.getLogger(__name__)
+        self._logger = logging.getLogger(__name__)
 
         self.subdomain = subdomain
         self.base_uri = self.uri.format(subdomain=self.subdomain)
@@ -331,7 +349,12 @@ class TpApi(object):
     def request_and_raise_error(self, *args, **kwargs):
         """Send a request and raise an ApiError if it fails."""
 
-        response = self.request(*args, **kwargs)
+        try:
+            response = self.request(*args, **kwargs)
+        except requests.exceptions.ConnectionError as e:
+            self.log_exception(e)
+            raise ApiError('ConnectionError',
+                           'Failed to establish a new connection.')
 
         if response.status_code < 200 or response.status_code >= 300:
             self.raise_exception(response)
@@ -344,8 +367,16 @@ class TpApi(object):
         try:
             return ResponseContent(response.json())
         except (json.decoder.JSONDecodeError, ValueError) as e:
-            self.logger.warning('Exception raised: {0}'.format(e))
-            return None
+            self.log_exception(e)
+
+    def log_exception(self, exception):
+        """Log an exception."""
+
+        # Hide the user's token from the logged message.
+        message = re.sub('(?<=token=)[a-zA-Z0-9\%]+(?=[& ])', '*****',
+                         str(exception))
+
+        self._logger.warning('Exception raised: {0}'.format(message))
 
     def raise_exception(self, response):
         """Raise an ApiError with the proper status code and message."""
