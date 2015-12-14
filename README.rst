@@ -22,7 +22,7 @@ Usage
 
 List recent tickets:
 
-.. code-block:: bash
+.. code-block::
 
     $ tp ls
 
@@ -35,7 +35,7 @@ List recent tickets:
 
 Filter tickets:
 
-.. code-block:: bash
+.. code-block::
 
     $ tp ls bug state=active name:user
     
