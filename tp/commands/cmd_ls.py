@@ -76,7 +76,12 @@ def main(filters, pager, table, json, **data):
     Formatter.date_format = app.config.get_from_template('date')
     output_data = []
     for entity in results:
-        row = [field.format(**Formatter(entity)) for field in fields]
+        row = []
+        for field in fields:
+            try:
+                row.append(field.format(**Formatter(entity)))
+            except KeyError:
+                row.append('')
         output_data.append(row)
 
     # Add a line between the command and table output.
