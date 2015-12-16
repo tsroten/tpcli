@@ -2,6 +2,7 @@
 """List entity command for tp."""
 
 from json import dumps
+import os
 
 import click
 from tabulate import tabulate, TableFormat, Line, DataRow
@@ -81,9 +82,14 @@ def main(filters, pager, table, json, **data):
     # Add a line between the command and table output.
     click.echo()
 
-    option_echo = click.echo_via_pager if pager is True else click.echo
     out = tabulate(output_data, headers=headers, tablefmt=table)
-    option_echo(out)
+    if pager is True:
+        original_less_options = os.environ['LESS']
+        os.environ['LESS'] = '-SRXF'
+        click.echo_via_pager(out)
+        os.environ['LESS'] = original_less_options
+    else:
+        click.echo(out)
 
     # Provide a little space at the end of the list.
     click.echo()
