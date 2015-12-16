@@ -97,6 +97,8 @@ class Formatter(dict):
             value = re.sub('<span data-mention="[\w@.]+">([\w\s]+)</span>',
                            '@\g<1>', value)
         if key.lower() == 'description':
+            # Remove the divs that TP uses for line breaks.
+            value = re.sub('<div>[\s\xa0]*</div>', '', value, re.UNICODE)
             value = html2text.html2text(value, bodywidth=0)
 
         return value
