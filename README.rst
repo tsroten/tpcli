@@ -45,7 +45,21 @@ Filter tickets:
     18812  Bug     Active   Mailing address validation throws errors to users     R. Jack
     18810  Bug     Active   Login doesn't work when user reassigned to new org    psmith
     [...]
-    ```
+
+Show a ticket's details:
+
+.. code-block::
+
+    $ tp show 18819
+
+    User's profile "Edit" button doesn't show up in IE 9
+    Bug #18819 by Jill Ross on 2015-12-01 14:45:29
+    Active as of 2015-12-05 10:21:35
+
+      When a user navigates to their profile using Internet Explorer 9, the "Edit" button
+      is missing from their profile's sidebar.
+
+      It appears to be an issue with the CSS for the parent div.
 
 
 More Information
