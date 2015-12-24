@@ -99,6 +99,10 @@ class FilterParser(object):
         }
 
         for filter_text in filters:
+            # Rewrite tags as TP entity field queries.
+            if filter_text.startswith('+'):
+                filter_text = 'tagobjects.name:{0}'.format(filter_text[1:])
+
             _filter = self._parse_conditional(filter_text)
 
             # If the filter was a conditional, add to the 'where' list.
